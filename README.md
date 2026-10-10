@@ -1,6 +1,6 @@
 # Hyprland Cloth Cursor
 
-Native Hyprland C++ plugin to give your cursor inertial dragging, rotating, bending, stretching, and click squashing!
+Native Hyprland C++ plugin to give your cursor inertial drag, rotation, bend, stretch, and click squash!
 
 https://github.com/user-attachments/assets/21f9e71b-1e15-45f2-aabc-06c6c4872f2d
 
