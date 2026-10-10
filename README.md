@@ -35,18 +35,6 @@ The cursor visible follows the pointer in fast motion. Clicks still use the actu
 <img width="1448" height="1086" alt="b81d1ca1-71b3-457d-9041-46d140093651" src="https://github.com/user-attachments/assets/97a37453-1910-4459-9811-d8ca209598cd" />
 
 
-```text
-Hyprland pointer position
-          ↓
-Bounded spring simulation
-          ↓
-Visual cursor position and velocity
-          ↓
-Rotation + bend + stretch
-          ↓
-Custom Hyprland cursor render pass
-```
-
 ### 1. Pointer events set the target
 
 Spring target is updated by mouse movement. The event handler then damages the affected area of the cursor and schedules a compositor frame.
