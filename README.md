@@ -1,10 +1,10 @@
 # Hyprland Cloth Cursor
 
-Native C++ Hyprland plugin that makes the visible cursor have inertial drag, rotation, bend, stretch, and click compression.
+Native Hyprland C++ plugin to give your cursor inertial dragging, rotating, bending, stretching, and click squashing!
 
 https://github.com/user-attachments/assets/21f9e71b-1e15-45f2-aabc-06c6c4872f2d
 
-The compiled plugin is `libclothcursor.so`. On end4 systems the installer adds a small Lua startup entry which loads and enables the plugin after login.
+The compiled version of the plugin is "libclothcursor.so". The installer appends a small startup entry to lua for end4 machines which load and enable the plugin on login.
 
 > [!IMPORTANT]
 > This release is live-tested against these exact Hyprland builds:
@@ -20,14 +20,13 @@ The compiled plugin is `libclothcursor.so`. On end4 systems the installer adds a
 
 ## What it does
 
-- Moves the visible cursor around a bounded 2D spring.
-- Computes rotation, skew and stretch from spring lag and velocity.
-- When a mouse button is held it compresses the cursor to `79%` and rebounds.
-- Transforms the cursor texture currently supplied by Hyprland, including theme and application cursor shapes.
-- Keeps application input at Hyprland's real pointer position.
-- Updates only the cursor's previous and current transformed regions.
-- Restores Hyprland's stock cursor when disabled.
-- Uses Hyprland's stock renderer for a frame when custom rendering cannot proceed safely.
+ - Moves visible cursor around bounded 2D spring.
+ - Calculate rotation / skew / stretch from spring lag & velocity.
+ - When a mouse button is held it squashes cursor down to `79%` and springs back.
+ - Transforms the cursor texture given by Hyprland (including Theme, App cursors)
+ - Preserve app input at Hyprland's real pointer location.
+ - Only update previous and current transformed cursor regions.
+ - Returns to Hyprland stock cursor when disabled or rendering can't be done.
   
 The cursor visible follows the pointer in fast motion. Clicks still use the actual pointer position.
 
@@ -50,7 +49,7 @@ Custom Hyprland cursor render pass
 
 ### 1. Pointer events set the target
 
-Mouse movement updates the spring target. The event handler damages the affected cursor region and schedules a compositor frame.
+Spring target is updated by mouse movement. The event handler then damages the affected area of the cursor and schedules a compositor frame.
 
 ### 2. A spring moves the visible cursor
 
@@ -69,22 +68,21 @@ acceleration =
     - damping × visual velocity
 ```
 
-The simulation uses small `1/240 s` integration steps, a bounded frame interval, maximum lag, and maximum velocity. It snaps to the target after reaching its settling thresholds.
+Simulation is done in tiny `(1/240s)` integration steps with bounded frame time, max lag and max velocity. It snaps to the target once the settling thresholds are met.
 
 ### 3. Motion creates the cloth effect
 
-The plugin derives the visual transform from spring state:
-
-- horizontal lag and velocity produce rotation;
-- the same motion signal produces a smaller skew;
-- lag distance and speed produce stretch;
-- cross-axis compression keeps the shape balanced.
+The plugin gets the visual transform from spring state:
+- horizontal lag,velocity gives rotation
+- same motion signal gives smaller skew
+- lag distance, speed gives stretch
+- cross-axis compression to balance shape
 
 All values have fixed limits.
 
 ### 4. A second spring handles clicks
 
-Mouse-button state drives a scalar spring from `0` to `1`. Its value scales both cursor axes down during a press and restores them on release.
+Mouse button state controls a scalar spring from 0 to 1. Its will scale the values of both cursor axes down during a press and restores them on release.
 
 ### 5. Hyprland draws the transformed cursor
 
@@ -94,17 +92,18 @@ The plugin hooks:
 CPointerManager::renderSoftwareCursorsFor(...)
 ```
 
-It reads Hyprland's active cursor texture, size, scale, and hotspot, then submits a custom render-pass element. The transform is applied around the hotspot in this order:
+Basically it just reads hyprland's active cursor texture, size, scale and hotspot. And it submits a custom render-pass element. It applies the transform of the cursor around the cursor hotspot, in this order:
 
 ```text
-rotation → skew → scale
+rotation => skew => scale
 ```
 
-The plugin forces software cursor rendering while enabled because the transformed texture is drawn inside the compositor render pass.
+
+The plugin forces software cursor rendering when enabled. This is because the transformed texture is drawn inside the compositor render pass.
 
 ### 6. Damage follows the transformed shape
 
-The plugin calculates a conservative bounding box from all four transformed cursor corners. It damages the union of the old and new bounds, including a small padding area. This clears the previous cursor image and avoids full-screen redraws.
+The plugin computes a conservative bounding box for all 4 cursor corners after the transformation. It damages the union of the old and new bounding boxes (plus a small padding around it). This clears the old cursor image and prevents full-screen redraws.
 
 ## Project structure
 
@@ -123,7 +122,7 @@ The plugin calculates a conservative bounding box from all four transformed curs
 
 ## Installation
 
-The installer builds the plugin locally, runs its tests, installs it under `~/.local/`, and creates a managed startup entry.
+The installer compiles the plugin locally on your machine, tests it, and installs it in ~/.local/, and also creates a managed startup.
 
 ```bash
 git clone https://github.com/bg-l2norm/hyprland-cloth-cursor.git
@@ -196,9 +195,9 @@ Legacy Hyprland `.conf` configuration uses an equivalent `exec-once` entry.
 
 ## Cursor themes
 
-Hyprland supplies the active cursor texture. Cloth Cursor transforms that texture during rendering.
+Hyprland provides the active cursor texture. The cloth cursor modifies that texture during the rendering process. 
 
-This keeps the effect compatible with cursor theme and size changes. A cursor-change event damages the old and new regions so the updated shape appears immediately.
+This allows it to remain compatible with changing cursor themes and sizes. Cursor change events trigger damage for the old and new areas so the new shape is shown right away.
 
 ## Disable and uninstall
 
@@ -224,21 +223,19 @@ The uninstaller disables and unloads the plugin before deleting its installed li
 
 ## Safety and limitations
 
-- The plugin starts disabled after direct loading. `clothcursorctl enable` activates it.
-- Hyprland 0.55.4, 0.56.1, and 0.56.2 at the exact commits above are tested baselines. Other builds can be attempted after confirmation, but compatibility is not guaranteed.
-- The renderer path requires Hyprland's OpenGL renderer.
-- HDR/ICC and other renderer paths are outside this release.
-- Software cursor composition uses more power than a hardware cursor plane.
-- Fast movement places the visual cursor behind the real input position.
-- A mouse disconnect during a held button can leave press compression active. Reset it with:
-
-  ```bash
-  clothcursorctl disable
-  clothcursorctl enable
-  ```
-
-- Controller-driven disable and unload remove queued custom cursor passes and release the software-cursor lock.
-- A plugin fault runs inside the compositor process and can end the Hyprland session.
+- disabled by default after direct loading. enable via `clothcursorctl enable`
+- tested baseline is hyprland versions 0.55.4, 0.56.1 and 0.56.2 at exact commits as above. feel free to try other builds after verifying, but it's not guaranteed to work.
+- renderer path: needs hyprland's opengl renderer
+- HDR/ICC + other renderer paths are not in this release
+- software cursor compositing uses more power than hw cursor plane
+- cursor lags behind input if moving fast
+- disconnecting the mouse while holding down a button could keep the press compression enabled. to reset:
+```bash
+clothcursorctl disable
+clothcursorctl enable
+```
+- controller based disable/unload will remove pending custom cursor passes and release the software cursor lock
+- a plugin fault runs inside the compositor process, it could kill the hyprland session
 
 ## Development build
 
@@ -273,13 +270,11 @@ cmake --build build-sanitize
 ctest --test-dir build-sanitize --output-on-failure
 ```
 
-With a parent Hyprland session running, execute the isolated two-output compositor gate:
-
+With a parent Hyprland session up and running, run the isolated two-output compositor gate:
 ```bash
 ./tests/nested_multi_output_test.sh
 ```
-
-It starts a temporary nested Hyprland, creates an adjacent headless output, verifies A→B and B→A spring settlement and owner-output scheduling, requires zero render rejects/fallbacks, then unloads the plugin and stops the nested compositor.
+This will launch a temporary nested Hyprland and add a side-by-side headless output, check A->B + B->A spring settle and owner output scheduling, insist on no render rejects/fallbacks, and finally unload plugin and exit nested compositor.
 
 ## License
 
