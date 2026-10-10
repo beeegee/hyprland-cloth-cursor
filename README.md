@@ -16,7 +16,7 @@ The compiled version of the plugin is "libclothcursor.so". The installer appends
 > 0.56.2  efb50993780079460b0cbed1363e2166a2de1d9f_aq_0.15_hu_0.14_hg_0.5_hc_0.1_hlg_0.6
 > ```
 >
-> Other versions are **untested** but the installer can build against their installed headers after an explicit warning and confirmation. The plugin still refuses a build/runtime ABI mismatch, and restores/keeps the stock cursor if its guarded renderer-hook checks fail. The renderer currently in use is OpenGL.
+> The others are **untested**, but can be compiled with the installed headers with an explicit warning and confirmation. It still does not allow a build/runtime ABI mismatch, and will restore/use the original cursor if the protected renderer-hook checks do not pass. (Currently using OpenGL as the renderer.)
 
 ## What it does
 
